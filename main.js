@@ -1,5 +1,5 @@
-// Temple Run: Realism & Speed Tuning Update
-console.log("Initializing Real Rigged Characters and Tuning Speed...");
+// Temple Run: AAA Cinematic Overhaul
+console.log("Initializing AAA Post-Processing, Particles, and Cinematic Camera...");
 
 // --- ECONOMY & UI SETUP ---
 let coins = 0;
@@ -69,6 +69,8 @@ Object.entries(charCards).forEach(([char, data]) => {
 // --- AUDIO SYNTHESIS ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let windOscillator;
+let footstepInterval = null;
+
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
@@ -100,6 +102,14 @@ function playSound(type) {
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.2);
+    } else if (type === 'footstep') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
     }
 }
 
@@ -109,11 +119,25 @@ function startAmbientSound() {
     windOscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     windOscillator.type = 'triangle';
-    windOscillator.frequency.value = 50;
-    gainNode.gain.value = 0.1;
+    windOscillator.frequency.value = 40; // Deep creepy rumble
+    gainNode.gain.value = 0.2;
     windOscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     windOscillator.start();
+}
+
+function startFootsteps() {
+    if(footstepInterval) return;
+    footstepInterval = setInterval(() => {
+        if(isPlaying && !isJumping && handDetected) playSound('footstep');
+    }, 350); // Rhythmic running
+}
+
+function stopFootsteps() {
+    if(footstepInterval) {
+        clearInterval(footstepInterval);
+        footstepInterval = null;
+    }
 }
 
 // --- PROCEDURAL TEXTURES ---
@@ -137,8 +161,9 @@ function createNoiseTexture(color1, color2) {
 
 // --- THREE.JS SETUP ---
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x040404, 0.035);
-scene.background = new THREE.Color(0x020202);
+// Deep, dense volumetric fog illusion
+scene.fog = new THREE.FogExp2(0x020804, 0.045); 
+scene.background = new THREE.Color(0x010402);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 8, 15);
@@ -147,19 +172,32 @@ camera.lookAt(0, 2, -15);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
+// Enable proper colors for post-processing
+renderer.toneMapping = THREE.ReinhardToneMapping;
 document.getElementById('game-container').appendChild(renderer.domElement);
 
+// --- POST-PROCESSING (BLOOM) ---
+const renderScene = new THREE.RenderPass(scene, camera);
+const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+bloomPass.threshold = 0.1;
+bloomPass.strength = 1.5; // Intense AAA Bloom
+bloomPass.radius = 0.5;
+
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(bloomPass);
+
 // --- LIGHTING ---
-const ambientLight = new THREE.AmbientLight(0x222233, 1.5);
+const ambientLight = new THREE.AmbientLight(0x223344, 2.0); // Moody blue moonlight
 scene.add(ambientLight);
 
-const playerLight = new THREE.PointLight(0xffaa00, 2.5, 60);
-playerLight.position.set(0, 5, 10);
+const playerLight = new THREE.PointLight(0xff8800, 3.5, 80); // Bright warm torch/flashlight
+playerLight.position.set(0, 6, 12);
 playerLight.castShadow = true;
 scene.add(playerLight);
 
 // --- ENVIRONMENT ---
-const groundTex = createNoiseTexture('#0a110a', '#050a05');
+const groundTex = createNoiseTexture('#081208', '#030803');
 const groundGeometry = new THREE.PlaneGeometry(400, 1000, 40, 100);
 const groundMaterial = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1.0 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -168,9 +206,9 @@ ground.position.z = -400;
 ground.receiveShadow = true;
 scene.add(ground);
 
-const pathTex = createNoiseTexture('#1a1a1a', '#222222');
+const pathTex = createNoiseTexture('#151515', '#2a2a2a');
 const pathGeometry = new THREE.PlaneGeometry(24, 1000);
-const pathMaterial = new THREE.MeshStandardMaterial({ map: pathTex, roughness: 0.9 });
+const pathMaterial = new THREE.MeshStandardMaterial({ map: pathTex, roughness: 0.8 });
 const path = new THREE.Mesh(pathGeometry, pathMaterial);
 path.rotation.x = -Math.PI / 2;
 path.position.y = 0.05;
@@ -183,21 +221,21 @@ const sceneryObjects = [];
 const obstacles = [];
 const coinObjects = [];
 
-const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x051505 });
-const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x2b1d14 });
-const woodTex = createNoiseTexture('#2b1d14', '#1f130c');
+const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x021102 });
+const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x1f130c });
+const woodTex = createNoiseTexture('#1f130c', '#150d08');
 const logMaterial = new THREE.MeshStandardMaterial({ map: woodTex });
-const stoneTex = createNoiseTexture('#555555', '#444444');
+const stoneTex = createNoiseTexture('#444', '#333');
 const pillarMaterial = new THREE.MeshStandardMaterial({ map: stoneTex });
-const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+const coinMaterial = new THREE.MeshStandardMaterial({ color: 0xffe600, metalness: 1.0, roughness: 0.1, emissive: 0x443300 }); // Glowing coins!
 
 function createTree(x, z) {
     const treeGroup = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 4), trunkMaterial);
-    trunk.position.y = 2;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 6), trunkMaterial);
+    trunk.position.y = 3;
     trunk.castShadow = true;
-    const leaves = new THREE.Mesh(new THREE.ConeGeometry(3, 15, 8), treeMaterial);
-    leaves.position.y = 9.5;
+    const leaves = new THREE.Mesh(new THREE.ConeGeometry(4, 20, 8), treeMaterial);
+    leaves.position.y = 12;
     leaves.castShadow = true;
     treeGroup.add(trunk);
     treeGroup.add(leaves);
@@ -226,26 +264,47 @@ function createObstacle(z) {
 }
 
 function createCoin(z) {
-    const coin = new THREE.Mesh(new THREE.TorusGeometry(1, 0.3, 8, 16), coinMaterial);
+    const coin = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.4, 16, 32), coinMaterial);
     const lanes = [-8, 0, 8];
     coin.position.x = lanes[Math.floor(Math.random() * lanes.length)];
-    coin.position.y = 2;
+    coin.position.y = 2.5;
     coin.position.z = z;
     coin.castShadow = true;
     scene.add(coin);
     coinObjects.push({ mesh: coin, active: true });
 }
 
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < 100; i++) {
     const side = Math.random() > 0.5 ? 1 : -1;
-    createTree(side * (15 + Math.random() * 50), -Math.random() * 800);
-}
-for (let i = 0; i < 15; i++) {
-    createObstacle(-200 - Math.random() * 600);
+    createTree(side * (16 + Math.random() * 60), -Math.random() * 800);
 }
 for (let i = 0; i < 20; i++) {
+    createObstacle(-200 - Math.random() * 600);
+}
+for (let i = 0; i < 30; i++) {
     createCoin(-150 - Math.random() * 600);
 }
+
+// --- PARTICLE SYSTEM (Dust/Embers) ---
+const particleCount = 1500;
+const particlesGeo = new THREE.BufferGeometry();
+const posArray = new Float32Array(particleCount * 3);
+for(let i = 0; i < particleCount; i++) {
+    posArray[i*3] = (Math.random() - 0.5) * 80; // X
+    posArray[i*3 + 1] = Math.random() * 30;     // Y
+    posArray[i*3 + 2] = -Math.random() * 800;   // Z
+}
+particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+const particlesMat = new THREE.PointsMaterial({
+    size: 0.25,
+    color: 0x88ff88, // Glowing mystical green
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    opacity: 0.9
+});
+const particleMesh = new THREE.Points(particlesGeo, particlesMat);
+scene.add(particleMesh);
+
 
 // --- REAL RIGGED 3D CHARACTER (GLTF) ---
 let playerModel = null;
@@ -256,9 +315,9 @@ let idleAction = null;
 const gltfLoader = new THREE.GLTFLoader();
 gltfLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', function(gltf) {
     playerModel = gltf.scene;
-    playerModel.scale.set(2.5, 2.5, 2.5); // Make it a good size
+    playerModel.scale.set(2.5, 2.5, 2.5); 
     playerModel.position.set(0, 0, 5);
-    playerModel.rotation.y = Math.PI; // Face away from camera
+    playerModel.rotation.y = Math.PI; 
     
     playerModel.traverse(function(object) {
         if (object.isMesh) {
@@ -268,37 +327,35 @@ gltfLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/exampl
     });
     scene.add(playerModel);
 
-    // Setup Animations
     mixer = new THREE.AnimationMixer(playerModel);
     const animations = gltf.animations;
     if(animations && animations.length > 0) {
-        // Soldier.glb has Idle at 0, Run at 1
         idleAction = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('idle')) || animations[0]);
         runAction = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('run')) || animations[1]);
         
-        idleAction.play(); // Start idle on the splash screen
+        idleAction.play(); 
     }
-    
     applySkin(selectedChar);
 });
 
 function applySkin(skinName) {
     if (!playerModel) return;
     let colorHex = 0xffffff;
-    
-    if (skinName === 'explorer') colorHex = 0x8b5a2b; // Khaki/Brown
-    else if (skinName === 'ninja') colorHex = 0x222222; // Dark
-    else if (skinName === 'knight') colorHex = 0xcccccc; // Silver
+    if (skinName === 'explorer') colorHex = 0x8b5a2b; 
+    else if (skinName === 'ninja') colorHex = 0x222222; 
+    else if (skinName === 'knight') colorHex = 0xcccccc; 
 
     playerModel.traverse(function(object) {
         if (object.isMesh) {
             object.material.color.setHex(colorHex);
             if (skinName === 'knight') {
-                object.material.metalness = 0.8;
-                object.material.roughness = 0.2;
+                object.material.metalness = 0.9;
+                object.material.roughness = 0.1;
+                object.material.emissive.setHex(0x111122); // Glowing runes vibe
             } else {
                 object.material.metalness = 0.1;
-                object.material.roughness = 0.8;
+                object.material.roughness = 0.9;
+                object.material.emissive.setHex(0x000000);
             }
         }
     });
@@ -307,7 +364,6 @@ function applySkin(skinName) {
 let targetX = 0; 
 let isJumping = false;
 let jumpVelocity = 0;
-// TUNED GRAVITY FOR SLOWER SPEED
 const GRAVITY = -0.015; 
 
 // --- AI HAND TRACKING (MediaPipe) ---
@@ -343,7 +399,7 @@ function onResults(results) {
 
         if (handY < 0.3 && !isJumping && playerModel && playerModel.position.y <= 0.1) {
             isJumping = true;
-            jumpVelocity = 0.45; // Tuned jump velocity
+            jumpVelocity = 0.45; 
             playSound('jump');
         }
     } else {
@@ -375,9 +431,9 @@ cameraObj.start();
 // --- GAME LOGIC & ANIMATION LOOP ---
 let isPlaying = false;
 let gameSpeed = 0;
-// TUNED SPEED: Much slower base speed for realistic pacing
 let baseSpeed = 0.5; 
 let score = 0;
+let timeScale = 1.0; // For slow motion!
 const gameOverScreen = document.getElementById('game-over-screen');
 const finalScoreElement = document.getElementById('final-score');
 const clock = new THREE.Clock();
@@ -385,6 +441,7 @@ const clock = new THREE.Clock();
 function resetGame() {
     score = 0;
     baseSpeed = 0.5; 
+    timeScale = 1.0;
     if(playerModel) playerModel.position.set(0, 0, 5);
     targetX = 0;
     isJumping = false;
@@ -405,20 +462,20 @@ function resetGame() {
 
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
+    const rawDelta = clock.getDelta();
+    const delta = rawDelta * timeScale;
     
-    if (mixer) mixer.update(delta); // Update 3D Character Animation
+    if (mixer) mixer.update(delta); // Skeletal animations
 
     if (isPlaying && playerModel) {
         if (handDetected) {
-            gameSpeed = baseSpeed;
-            score += 0.05;
-            baseSpeed += 0.0001; // Slower difficulty acceleration
+            gameSpeed = baseSpeed * timeScale;
+            score += 0.05 * timeScale;
+            baseSpeed += 0.0001; // Acceleration
             scoreElement.innerText = `Score: ${Math.floor(score)}`;
             instructionsElement.innerText = "Running... Keep hand visible!";
             instructionsElement.style.color = "#00ff00";
             
-            // Play run animation if not already running
             if (idleAction && idleAction.isRunning()) {
                 idleAction.stop();
                 if(runAction) runAction.play();
@@ -426,31 +483,65 @@ function animate() {
                 runAction.play();
             }
 
+            // DYNAMIC CINEMATIC CAMERA (FOV widens with speed)
+            const targetFov = 75 + (baseSpeed * 20);
+            camera.fov += (targetFov - camera.fov) * 0.05;
+            camera.updateProjectionMatrix();
+
         } else {
             gameSpeed *= 0.9;
             instructionsElement.innerText = "Show hand to run!";
             instructionsElement.style.color = "#ff3333";
             
-            // Play idle animation if stopped
             if (gameSpeed < 0.1 && runAction && runAction.isRunning()) {
                 runAction.stop();
                 if(idleAction) idleAction.play();
             }
         }
 
+        // CAMERA TILT on lane change
+        const targetTilt = (targetX / -8) * 0.1; // Roll slightly left/right
+        camera.rotation.z += (targetTilt - camera.rotation.z) * 0.1;
+
+        // Player Movement
         playerModel.position.x += (targetX - playerModel.position.x) * 0.1;
         playerLight.position.x = playerModel.position.x;
 
+        // JUMP PHYSICS & SLOW MOTION (MATRIX EFFECT)
+        let shakeX = 0, shakeY = 0;
         if (isJumping || playerModel.position.y > 0) {
-            playerModel.position.y += jumpVelocity;
-            jumpVelocity += GRAVITY;
+            timeScale = 0.4; // Enter slow motion while in air!
+            
+            // Adjust physics multipliers for timescale
+            playerModel.position.y += jumpVelocity * (timeScale * 2.5);
+            jumpVelocity += GRAVITY * (timeScale * 2.5);
+            
+            // Camera Shake during jump
+            shakeX = (Math.random() - 0.5) * 0.1;
+            shakeY = (Math.random() - 0.5) * 0.1;
             
             if (playerModel.position.y <= 0) {
                 playerModel.position.y = 0;
                 isJumping = false;
                 jumpVelocity = 0;
+                timeScale = 1.0; // Return to real time
+                
+                // Landing shake
+                shakeY = -0.5; 
             }
         }
+        camera.position.x = shakeX;
+        camera.position.y = 8 + shakeY;
+
+        // Particles
+        const positions = particleMesh.geometry.attributes.position.array;
+        for(let i=0; i<particleCount; i++) {
+            positions[i*3 + 2] += gameSpeed * 1.5; // Move towards camera
+            if (positions[i*3 + 2] > 20) {
+                positions[i*3 + 2] = -800;
+            }
+        }
+        particleMesh.geometry.attributes.position.needsUpdate = true;
 
         // Move Scenery
         sceneryObjects.forEach(obj => {
@@ -458,7 +549,7 @@ function animate() {
             if (obj.position.z > 20) {
                 obj.position.z -= 800;
                 const side = Math.random() > 0.5 ? 1 : -1;
-                obj.position.x = side * (15 + Math.random() * 50);
+                obj.position.x = side * (16 + Math.random() * 60);
             }
         });
         
@@ -466,16 +557,15 @@ function animate() {
         obstacles.forEach(obs => {
             obs.position.z += gameSpeed;
             
-            // Collision Logic with new Rigged Character
             const distZ = Math.abs(obs.position.z - playerModel.position.z);
             const distX = Math.abs(obs.position.x - playerModel.position.x);
-            // Player Y is at feet (0), so center of body is roughly +2.5
             const distY = Math.abs(obs.position.y - (playerModel.position.y + 2.5)); 
             
             if (distZ < 2.5 && distX < 2.5 && distY < 3) {
                 // CRAAASH!
                 playSound('crash');
                 isPlaying = false;
+                stopFootsteps();
                 finalScoreElement.innerText = `Final Score: ${Math.floor(score)}`;
                 gameOverScreen.classList.remove('hidden');
                 updateShopUI(); 
@@ -488,11 +578,11 @@ function animate() {
             }
         });
 
-        // Move Coins and Detect Collection
+        // Coins
         coinObjects.forEach(c => {
             if (c.active) {
                 c.mesh.position.z += gameSpeed;
-                c.mesh.rotation.y += 0.1;
+                c.mesh.rotation.y += 0.1 * timeScale;
                 
                 const distZ = Math.abs(c.mesh.position.z - playerModel.position.z);
                 const distX = Math.abs(c.mesh.position.x - playerModel.position.x);
@@ -529,12 +619,14 @@ function animate() {
         coinObjects.forEach(c => { if(c.active) c.mesh.rotation.y += 0.05; });
     }
     
-    renderer.render(scene, camera);
+    // RENDER USING EFFECT COMPOSER INSTEAD OF SCENE DIRECTLY!
+    composer.render(rawDelta);
 }
 
 // Handle window resize
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
@@ -547,16 +639,17 @@ const startScreen = document.getElementById('start-screen');
 startBtn.addEventListener('click', () => {
     startScreen.classList.add('hidden');
     startAmbientSound();
+    startFootsteps();
     resetGame();
     isPlaying = true;
     
-    // Switch to run animation immediately when starting
     if (idleAction) idleAction.stop();
     if (runAction) runAction.play();
 });
 
 restartBtn.addEventListener('click', () => {
     gameOverScreen.classList.add('hidden');
+    startFootsteps();
     resetGame();
     isPlaying = true;
     
