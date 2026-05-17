@@ -346,11 +346,29 @@ function onResults(r){
         handOn=true;const lm=r.multiHandLandmarks[0];
         drawConnectors(cCtx,lm,HAND_CONNECTIONS,{color:'#00ff88',lineWidth:2});
         drawLandmarks(cCtx,lm,{color:'#ff2233',lineWidth:1,radius:3});
-        const hx=lm[0].x,hy=lm[0].y;
+        
+        const hx=lm[0].x;
         if(hx>0.65)targetLane=2; else if(hx<0.35)targetLane=0; else targetLane=1;
-        if(hy<0.25&&!isJump&&playerGroup.position.y<0.5){isJump=true;jumpV=0.55;AudioEngine.play('jump');gestIcon.textContent='⬆️';gestTxt.textContent='JUMP!';}
-        else if(hy>0.75&&!isSlide&&!isJump){isSlide=true;setTimeout(()=>{isSlide=false;},600);AudioEngine.play('slide');gestIcon.textContent='⬇️';gestTxt.textContent='SLIDE!';}
-        else if(!isJump&&!isSlide){
+
+        // Detect extension states for each finger: extended if tip is higher than knuckle base joint
+        const indexExtended = lm[8].y < lm[6].y;
+        const middleExtended = lm[12].y < lm[10].y;
+        const ringExtended = lm[16].y < lm[14].y;
+        const pinkyExtended = lm[20].y < lm[18].y;
+
+        // Peace Sign (✌️): Index and Middle extended, Ring and Pinky folded
+        const isPeace = indexExtended && middleExtended && !ringExtended && !pinkyExtended;
+
+        // Closed Fist (✊): Index, Middle, Ring, Pinky all folded
+        const isFist = !indexExtended && !middleExtended && !ringExtended && !pinkyExtended;
+
+        if(isPeace && !isJump && playerGroup.position.y < 0.5){
+            isJump=true;jumpV=0.55;AudioEngine.play('jump');
+            gestIcon.textContent='✌️';gestTxt.textContent='JUMP!';
+        } else if(isFist && !isSlide && !isJump){
+            isSlide=true;setTimeout(()=>{isSlide=false;},600);AudioEngine.play('slide');
+            gestIcon.textContent='✊';gestTxt.textContent='SLIDE!';
+        } else if(!isJump&&!isSlide){
             if(hx>0.65){gestIcon.textContent='➡️';gestTxt.textContent='RIGHT';}
             else if(hx<0.35){gestIcon.textContent='⬅️';gestTxt.textContent='LEFT';}
             else{gestIcon.textContent='✋';gestTxt.textContent='CENTER';}
