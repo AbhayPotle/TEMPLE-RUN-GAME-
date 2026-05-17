@@ -60,7 +60,7 @@ forestTex.repeat.set(30, 120);
 forestTex.anisotropy = ren.capabilities.getMaxAnisotropy();
 
 const gnd=new THREE.Mesh(new THREE.PlaneGeometry(300,1200),
-    new THREE.MeshStandardMaterial({map:forestTex,roughness:0.95}));
+    new THREE.MeshStandardMaterial({map:forestTex,color:0x331100,emissive:0xff2200,emissiveIntensity:0.35,roughness:0.95}));
 gnd.rotation.x=-Math.PI/2;gnd.position.set(0, 0, 400);gnd.receiveShadow=true;scene.add(gnd);
 
 // PATH
@@ -208,6 +208,21 @@ playerGroup.position.set(0,0,5);scene.add(playerGroup);
 playerGroup.add(torch);
 playerGroup.add(torchTarget);
 
+// 8K Volumetric Light Cone for realistic flashlight beam
+const coneGeo = new THREE.ConeGeometry(3.5, 45, 32, 1, true);
+coneGeo.rotateX(Math.PI / 2);
+coneGeo.translate(0, 3.8, 22.5); // Pivot at flashlight height, extending forward
+const coneMat = new THREE.MeshBasicMaterial({
+    color: 0xffaa44,
+    transparent: true,
+    opacity: 0.15,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+const lightCone = new THREE.Mesh(coneGeo, coneMat);
+playerGroup.add(lightCone);
+
 // Placeholder while model loads
 const phBody=new THREE.Mesh(THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.5,1.5,4,8):new THREE.CylinderGeometry(0.5,0.5,2.5,8),
     new THREE.MeshStandardMaterial({color:0xcc3333,roughness:0.6}));
@@ -318,6 +333,11 @@ function reset(){
     scoreEl.textContent='0';coinsEl.textContent='0';comboEl.classList.add('hidden');
 }
 
+function triggerScreenShake(){
+    document.body.classList.add('shake');
+    setTimeout(()=>document.body.classList.remove('shake'), 400);
+}
+
 let growlT=0, lightningT=0;
 // MAIN LOOP
 function tick(){
@@ -329,6 +349,9 @@ function tick(){
 
     // Pulsing blood-red runes along path borders for aggressive aesthetics
     edgeMat.emissiveIntensity = 1.2 + Math.sin(Date.now() * 0.006) * 0.6;
+
+    // Pulsing molten volcanic lava ground emissive creep for 8K realism
+    gnd.material.emissiveIntensity = 0.35 + Math.sin(Date.now() * 0.003) * 0.15;
 
     // Atmospheric dynamic lightning strikes & rumbling thunder
     lightningT += dt;
@@ -359,7 +382,10 @@ function tick(){
 
     if(isJump||playerGroup.position.y>0.05){
         playerGroup.position.y+=jumpV;jumpV-=0.025;
-        if(playerGroup.position.y<=0){playerGroup.position.y=0;isJump=false;jumpV=0;}
+        if(playerGroup.position.y<=0){
+            playerGroup.position.y=0;isJump=false;jumpV=0;
+            triggerScreenShake();
+        }
     }
     playerGroup.scale.set(1,1,1);
 
@@ -389,6 +415,7 @@ function tick(){
         if(dz<4&&dz>2&&dx<3&&!o.userData.nm){
             o.userData.nm=true;G.combo++;if(G.combo>G.bestCombo)G.bestCombo=G.combo;
             AudioEngine.play('nearmiss');
+            triggerScreenShake();
             nearMissEl.classList.remove('hidden');nearMissEl.style.animation='none';void nearMissEl.offsetWidth;
             nearMissEl.style.animation='nearMissAnim 1s ease-out forwards';
             setTimeout(()=>nearMissEl.classList.add('hidden'),1000);

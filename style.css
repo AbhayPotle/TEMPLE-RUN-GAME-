@@ -798,3 +798,111 @@ body, html {
 .red-flash {
     animation: redFlash 0.5s ease-out;
 }
+
+/* --- Gesture Tutorial Guide UI --- */
+.gesture-guide-container {
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-top: 15px;
+    max-width: 680px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+}
+
+.guide-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--color-gold);
+    margin-bottom: 12px;
+    text-shadow: 0 0 10px rgba(240, 165, 0, 0.4);
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.guide-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+
+.guide-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(240, 165, 0, 0.4);
+    background: rgba(240, 165, 0, 0.03);
+}
+
+.guide-icon-box {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 50%;
+    margin-bottom: 2px;
+}
+
+.arrow-indicator {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    font-size: 14px;
+}
+
+.hand-emoji {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.hand-emoji.raised {
+    animation: handRaise 1.5s ease-in-out infinite;
+}
+
+.hand-emoji.lowered {
+    animation: handLower 1.5s ease-in-out infinite;
+}
+
+@keyframes handRaise {
+    0%, 100% { transform: translateY(2px) scale(0.95); }
+    50% { transform: translateY(-8px) scale(1.15); }
+}
+
+@keyframes handLower {
+    0%, 100% { transform: translateY(-2px) scale(1.1); }
+    50% { transform: translateY(8px) scale(0.9); }
+}
+
+.guide-card-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    text-align: center;
+}
+
+.guide-card-desc {
+    font-family: var(--font-body);
+    font-size: 9.5px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+}
