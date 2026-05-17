@@ -622,7 +622,7 @@ function tick(){
         let hit=false;
         if(dz<2.2&&dx<2.2){
             if(o.userData.type===0){
-                if(py<1.4)hit=true; // Root obstacle: jump over!
+                if(!isJump)hit=true; // Root obstacle: jump over!
             }else if(o.userData.type===1){
                 if(!isSlide)hit=true; // Branch obstacle: slide under!
             }else{
