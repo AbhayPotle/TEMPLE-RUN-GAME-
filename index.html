@@ -3,88 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temple Run - Creepy Forest</title>
+    <title>Temple Run - Creepy Forest | AI Hand Tracking</title>
+    <meta name="description" content="An immersive 3D Temple Run game with AI hand gesture controls, realistic graphics, and cinematic atmosphere.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Three.js for 3D Graphics -->
+
+    <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <!-- MediaPipe for Hand Tracking -->
+
+    <!-- MediaPipe Hand Tracking -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <!-- 3D Game Container -->
+    <!-- 3D Game Canvas -->
     <div id="game-container"></div>
 
-    <!-- UI Overlay -->
+    <!-- Cinematic Vignette Overlay -->
+    <div id="vignette"></div>
+
+    <!-- UI Layer -->
     <div id="ui-layer">
-        <div id="top-bar">
-            <div id="score">Score: 0</div>
-            <div id="combo-display" class="hidden">🔥 COMBO x<span id="combo-count">1</span></div>
-            <div id="coin-display">💰 <span id="coin-count">0</span></div>
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div id="score-container">
+                <div id="score-label">SCORE</div>
+                <div id="score">0</div>
+            </div>
+            <div id="coins-container">
+                <span id="coin-icon">🪙</span>
+                <span id="coins">0</span>
+            </div>
+            <div id="combo-container" class="hidden">
+                <span id="combo-text">COMBO x2</span>
+            </div>
+            <div id="speed-indicator">
+                <div id="speed-bar"></div>
+            </div>
         </div>
-        <div id="instructions">Raise Hand: Forward | Swipe L/R: Turn | Swipe Up: Jump</div>
-        
-        <!-- Lightning Flash Overlay -->
-        <div id="lightning-flash"></div>
-        
-        <!-- Webcam feed and hand tracking canvas for user visibility -->
-        <div class="webcam-container">
+
+        <!-- Gesture Indicator -->
+        <div id="gesture-indicator" class="hidden">
+            <div id="gesture-icon">✋</div>
+            <div id="gesture-text">Detecting...</div>
+        </div>
+
+        <!-- Webcam Feed -->
+        <div class="webcam-container" id="webcam-wrapper">
+            <div class="webcam-label">AI TRACKING</div>
             <video id="input_video" class="input_video" autoplay playsinline></video>
             <canvas id="output_canvas" class="output_canvas" width="320" height="240"></canvas>
+            <div class="webcam-status" id="webcam-status">Initializing Camera...</div>
         </div>
-        
-        <!-- Cinematic Intro Overlay -->
-        <div id="cinematic-intro" class="hidden">
-            <div id="intro-text"></div>
+
+        <!-- Warning Flash -->
+        <div id="warning-flash" class="hidden">
+            <span>⚠️ SHOW HAND TO RUN!</span>
         </div>
-        
+
+        <!-- Near Miss Effect -->
+        <div id="near-miss" class="hidden">NEAR MISS!</div>
+
+        <!-- Start Screen -->
         <div id="start-screen">
-            <h1>TEMPLE RUN<br><span style="font-size: 0.5em; color: #ff3333;">CREEPY FOREST</span></h1>
-            
-            <div id="character-selection">
-                <h2>SELECT CHARACTER</h2>
-                <div class="char-cards">
-                    <div class="char-card" data-char="explorer" id="card-explorer">
-                        <h3>Explorer</h3>
-                        <p>Unlocked</p>
+            <div class="start-bg"></div>
+            <div class="start-particles"></div>
+            <div class="start-content">
+                <div class="title-container">
+                    <h1 class="game-title">TEMPLE RUN</h1>
+                    <h2 class="game-subtitle">CURSED FOREST</h2>
+                    <div class="title-divider"></div>
+                    <p class="tagline">Escape the ancient curse using your hands</p>
+                </div>
+                <div class="features-row">
+                    <div class="feature-card">
+                        <span class="feature-icon">👁️</span>
+                        <span class="feature-text">AI Vision</span>
                     </div>
-                    <div class="char-card locked" data-char="ninja" id="card-ninja">
-                        <h3>Ninja</h3>
-                        <p class="price">💰 50</p>
+                    <div class="feature-card">
+                        <span class="feature-icon">✋</span>
+                        <span class="feature-text">Hand Tracking</span>
                     </div>
-                    <div class="char-card locked" data-char="knight" id="card-knight">
-                        <h3>Knight</h3>
-                        <p class="price">💰 100</p>
-                    </div>
-                    <div class="char-card locked" data-char="adventurer" id="card-adventurer">
-                        <h3>Adventurer</h3>
-                        <p class="price">💰 150</p>
+                    <div class="feature-card">
+                        <span class="feature-icon">🏃</span>
+                        <span class="feature-text">Endless Run</span>
                     </div>
                 </div>
+                <button id="start-btn" class="btn-primary">
+                    <span class="btn-glow"></span>
+                    <span class="btn-text">▶ START GAME</span>
+                </button>
+                <div class="controls-info">
+                    <div class="control-item"><span class="key">← →</span> Move Hand Left/Right to Turn</div>
+                    <div class="control-item"><span class="key">↑</span> Raise Hand to Jump</div>
+                    <div class="control-item"><span class="key">↓</span> Lower Hand to Slide</div>
+                </div>
             </div>
-
-            <p>Show your hand to the camera to start.</p>
-            <button id="start-btn">START GAME</button>
         </div>
-        
+
+        <!-- Cinematic Intro Overlay -->
+        <div id="intro-overlay" class="hidden">
+            <div id="intro-text"></div>
+        </div>
+
+        <!-- Game Over Screen -->
         <div id="game-over-screen" class="hidden">
-            <h1>GAME OVER</h1>
-            <p id="final-score">Score: 0</p>
-            <p id="final-coins">Coins earned: 0</p>
-            <button id="restart-btn">RETRY</button>
+            <div class="gameover-bg"></div>
+            <div class="gameover-content">
+                <h1 class="gameover-title">GAME OVER</h1>
+                <div class="gameover-skull">💀</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="final-score">0</div>
+                        <div class="stat-label">SCORE</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="final-coins">0</div>
+                        <div class="stat-label">COINS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="final-distance">0m</div>
+                        <div class="stat-label">DISTANCE</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="final-best-combo">0</div>
+                        <div class="stat-label">BEST COMBO</div>
+                    </div>
+                </div>
+                <button id="restart-btn" class="btn-primary">
+                    <span class="btn-glow"></span>
+                    <span class="btn-text">🔄 RETRY</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Game Logic -->
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Loading Ancient Ruins...</div>
+            <div class="loader-bar"><div class="loader-fill"></div></div>
+        </div>
+    </div>
+
     <script src="main.js"></script>
 </body>
 </html>
