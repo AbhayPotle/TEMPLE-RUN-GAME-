@@ -1,12 +1,11 @@
-// Temple Run: Overhaul - Animated Characters & Economy
-console.log("Initializing Game Overhaul...");
+// Temple Run: Realism & Speed Tuning Update
+console.log("Initializing Real Rigged Characters and Tuning Speed...");
 
 // --- ECONOMY & UI SETUP ---
 let coins = 0;
 let unlockedChars = ['explorer'];
 let selectedChar = 'explorer';
 
-// Load from Local Storage
 const savedData = localStorage.getItem('templeRunData');
 if (savedData) {
     const data = JSON.parse(savedData);
@@ -16,12 +15,9 @@ if (savedData) {
 }
 
 function saveData() {
-    localStorage.setItem('templeRunData', JSON.stringify({
-        coins, unlockedChars, selectedChar
-    }));
+    localStorage.setItem('templeRunData', JSON.stringify({ coins, unlockedChars, selectedChar }));
 }
 
-// UI Elements
 const coinCountEl = document.getElementById('coin-count');
 coinCountEl.innerText = coins;
 
@@ -38,7 +34,6 @@ function updateShopUI() {
             data.el.classList.remove('locked');
             data.el.querySelector('p').innerText = 'Unlocked';
         }
-        
         if (char === selectedChar) {
             data.el.classList.add('selected');
         } else {
@@ -46,7 +41,6 @@ function updateShopUI() {
         }
     }
 }
-
 updateShopUI();
 
 Object.entries(charCards).forEach(([char, data]) => {
@@ -55,9 +49,8 @@ Object.entries(charCards).forEach(([char, data]) => {
             selectedChar = char;
             saveData();
             updateShopUI();
-            if(player) applySkin(player, char);
+            applySkin(char);
         } else {
-            // Try to buy
             if (coins >= data.price) {
                 coins -= data.price;
                 unlockedChars.push(char);
@@ -65,7 +58,7 @@ Object.entries(charCards).forEach(([char, data]) => {
                 saveData();
                 updateShopUI();
                 playSound('coin');
-                if(player) applySkin(player, char);
+                applySkin(char);
             } else {
                 alert("Not enough coins!");
             }
@@ -73,11 +66,9 @@ Object.entries(charCards).forEach(([char, data]) => {
     });
 });
 
-
 // --- AUDIO SYNTHESIS ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let windOscillator;
-
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
@@ -88,11 +79,11 @@ function playSound(type) {
     if (type === 'jump') {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.3);
         gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
+        osc.stop(audioCtx.currentTime + 0.3);
     } else if (type === 'crash') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(100, audioCtx.currentTime);
@@ -150,10 +141,10 @@ scene.fog = new THREE.FogExp2(0x040404, 0.035);
 scene.background = new THREE.Color(0x020202);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 7, 15);
-camera.lookAt(0, 2, -20);
+camera.position.set(0, 8, 15);
+camera.lookAt(0, 2, -15);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 document.getElementById('game-container').appendChild(renderer.domElement);
@@ -187,7 +178,7 @@ path.position.z = -400;
 path.receiveShadow = true;
 scene.add(path);
 
-// --- PROCEDURAL OBJECTS (Trees & Obstacles & Coins) ---
+// --- PROCEDURAL SCENERY & OBSTACLES ---
 const sceneryObjects = [];
 const obstacles = [];
 const coinObjects = [];
@@ -226,7 +217,6 @@ function createObstacle(z) {
         obs = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 8), pillarMaterial);
         obs.position.y = 4;
     }
-    
     const lanes = [-8, 0, 8];
     obs.position.x = lanes[Math.floor(Math.random() * lanes.length)];
     obs.position.z = z;
@@ -257,101 +247,68 @@ for (let i = 0; i < 20; i++) {
     createCoin(-150 - Math.random() * 600);
 }
 
-// --- ANIMATED 3D CHARACTER ---
-function createHumanoid() {
-    const group = new THREE.Group();
-    
-    // Geometries
-    const headGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-    const bodyGeo = new THREE.BoxGeometry(2, 2.5, 1);
-    const limbGeo = new THREE.BoxGeometry(0.8, 3, 0.8);
-    
-    // Materials (will be updated by skin)
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    
-    // Head
-    const head = new THREE.Mesh(headGeo, mat.clone());
-    head.position.y = 4.25;
-    group.add(head);
-    
-    // Body
-    const body = new THREE.Mesh(bodyGeo, mat.clone());
-    body.position.y = 2.25;
-    group.add(body);
-    
-    // Arms (Pivot points at shoulders)
-    const leftArmPivot = new THREE.Group();
-    leftArmPivot.position.set(-1.5, 3.25, 0);
-    const leftArm = new THREE.Mesh(limbGeo, mat.clone());
-    leftArm.position.y = -1.5; // offset so pivot is at top
-    leftArmPivot.add(leftArm);
-    group.add(leftArmPivot);
-    
-    const rightArmPivot = new THREE.Group();
-    rightArmPivot.position.set(1.5, 3.25, 0);
-    const rightArm = new THREE.Mesh(limbGeo, mat.clone());
-    rightArm.position.y = -1.5;
-    rightArmPivot.add(rightArm);
-    group.add(rightArmPivot);
-    
-    // Legs (Pivot points at hips)
-    const leftLegPivot = new THREE.Group();
-    leftLegPivot.position.set(-0.6, 1, 0);
-    const leftLeg = new THREE.Mesh(limbGeo, mat.clone());
-    leftLeg.position.y = -1.5;
-    leftLegPivot.add(leftLeg);
-    group.add(leftLegPivot);
-    
-    const rightLegPivot = new THREE.Group();
-    rightLegPivot.position.set(0.6, 1, 0);
-    const rightLeg = new THREE.Mesh(limbGeo, mat.clone());
-    rightLeg.position.y = -1.5;
-    rightLegPivot.add(rightLeg);
-    group.add(rightLegPivot);
-    
-    group.traverse(child => { if (child.isMesh) child.castShadow = true; });
-    
-    return {
-        mesh: group,
-        head, body, leftArm, rightArm, leftLeg, rightLeg,
-        leftArmPivot, rightArmPivot, leftLegPivot, rightLegPivot
-    };
-}
+// --- REAL RIGGED 3D CHARACTER (GLTF) ---
+let playerModel = null;
+let mixer = null;
+let runAction = null;
+let idleAction = null;
 
-function applySkin(character, skinName) {
-    let colors = {};
-    if (skinName === 'explorer') {
-        colors = { head: 0xffccaa, body: 0x8b5a2b, arms: 0xffccaa, legs: 0x556b2f };
-    } else if (skinName === 'ninja') {
-        colors = { head: 0x111111, body: 0x222222, arms: 0x111111, legs: 0x111111 };
-        // Ninja has red headband (simulate with head color for now)
-    } else if (skinName === 'knight') {
-        colors = { head: 0xaaaaaa, body: 0xcccccc, arms: 0xaaaaaa, legs: 0x999999 };
+const gltfLoader = new THREE.GLTFLoader();
+gltfLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Soldier.glb', function(gltf) {
+    playerModel = gltf.scene;
+    playerModel.scale.set(2.5, 2.5, 2.5); // Make it a good size
+    playerModel.position.set(0, 0, 5);
+    playerModel.rotation.y = Math.PI; // Face away from camera
+    
+    playerModel.traverse(function(object) {
+        if (object.isMesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+        }
+    });
+    scene.add(playerModel);
+
+    // Setup Animations
+    mixer = new THREE.AnimationMixer(playerModel);
+    const animations = gltf.animations;
+    if(animations && animations.length > 0) {
+        // Soldier.glb has Idle at 0, Run at 1
+        idleAction = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('idle')) || animations[0]);
+        runAction = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('run')) || animations[1]);
+        
+        idleAction.play(); // Start idle on the splash screen
     }
     
-    character.head.material.color.setHex(colors.head);
-    character.body.material.color.setHex(colors.body);
-    character.leftArm.material.color.setHex(colors.arms);
-    character.rightArm.material.color.setHex(colors.arms);
-    character.leftLeg.material.color.setHex(colors.legs);
-    character.rightLeg.material.color.setHex(colors.legs);
-    
-    if (skinName === 'knight') {
-        character.mesh.traverse(c => { if(c.isMesh) { c.material.metalness = 0.8; c.material.roughness = 0.2; }});
-    } else {
-        character.mesh.traverse(c => { if(c.isMesh) { c.material.metalness = 0.1; c.material.roughness = 0.8; }});
-    }
-}
+    applySkin(selectedChar);
+});
 
-const player = createHumanoid();
-player.mesh.position.set(0, 0, 5);
-scene.add(player.mesh);
-applySkin(player, selectedChar);
+function applySkin(skinName) {
+    if (!playerModel) return;
+    let colorHex = 0xffffff;
+    
+    if (skinName === 'explorer') colorHex = 0x8b5a2b; // Khaki/Brown
+    else if (skinName === 'ninja') colorHex = 0x222222; // Dark
+    else if (skinName === 'knight') colorHex = 0xcccccc; // Silver
+
+    playerModel.traverse(function(object) {
+        if (object.isMesh) {
+            object.material.color.setHex(colorHex);
+            if (skinName === 'knight') {
+                object.material.metalness = 0.8;
+                object.material.roughness = 0.2;
+            } else {
+                object.material.metalness = 0.1;
+                object.material.roughness = 0.8;
+            }
+        }
+    });
+}
 
 let targetX = 0; 
 let isJumping = false;
 let jumpVelocity = 0;
-const GRAVITY = -0.025;
+// TUNED GRAVITY FOR SLOWER SPEED
+const GRAVITY = -0.015; 
 
 // --- AI HAND TRACKING (MediaPipe) ---
 const videoElement = document.getElementById('input_video');
@@ -384,9 +341,9 @@ function onResults(results) {
             targetX = 0;
         }
 
-        if (handY < 0.3 && !isJumping && player.mesh.position.y <= 0.1) {
+        if (handY < 0.3 && !isJumping && playerModel && playerModel.position.y <= 0.1) {
             isJumping = true;
-            jumpVelocity = 0.55;
+            jumpVelocity = 0.45; // Tuned jump velocity
             playSound('jump');
         }
     } else {
@@ -418,16 +375,17 @@ cameraObj.start();
 // --- GAME LOGIC & ANIMATION LOOP ---
 let isPlaying = false;
 let gameSpeed = 0;
-let baseSpeed = 1.2;
+// TUNED SPEED: Much slower base speed for realistic pacing
+let baseSpeed = 0.5; 
 let score = 0;
-let animTime = 0;
 const gameOverScreen = document.getElementById('game-over-screen');
 const finalScoreElement = document.getElementById('final-score');
+const clock = new THREE.Clock();
 
 function resetGame() {
     score = 0;
-    baseSpeed = 1.2;
-    player.mesh.position.set(0, 0, 5);
+    baseSpeed = 0.5; 
+    if(playerModel) playerModel.position.set(0, 0, 5);
     targetX = 0;
     isJumping = false;
     
@@ -447,42 +405,48 @@ function resetGame() {
 
 function animate() {
     requestAnimationFrame(animate);
+    const delta = clock.getDelta();
     
-    if (isPlaying) {
+    if (mixer) mixer.update(delta); // Update 3D Character Animation
+
+    if (isPlaying && playerModel) {
         if (handDetected) {
             gameSpeed = baseSpeed;
-            score += 0.1;
-            baseSpeed += 0.0005; // Gradually increase difficulty
+            score += 0.05;
+            baseSpeed += 0.0001; // Slower difficulty acceleration
             scoreElement.innerText = `Score: ${Math.floor(score)}`;
             instructionsElement.innerText = "Running... Keep hand visible!";
             instructionsElement.style.color = "#00ff00";
             
-            // Running Animation
-            animTime += 0.2;
-            player.leftArmPivot.rotation.x = Math.sin(animTime) * 1.5;
-            player.rightArmPivot.rotation.x = -Math.sin(animTime) * 1.5;
-            player.leftLegPivot.rotation.x = -Math.sin(animTime) * 1.5;
-            player.rightLegPivot.rotation.x = Math.sin(animTime) * 1.5;
+            // Play run animation if not already running
+            if (idleAction && idleAction.isRunning()) {
+                idleAction.stop();
+                if(runAction) runAction.play();
+            } else if (runAction && !runAction.isRunning()) {
+                runAction.play();
+            }
+
         } else {
             gameSpeed *= 0.9;
             instructionsElement.innerText = "Show hand to run!";
             instructionsElement.style.color = "#ff3333";
-            // Stand still
-            player.leftArmPivot.rotation.x = 0;
-            player.rightArmPivot.rotation.x = 0;
-            player.leftLegPivot.rotation.x = 0;
-            player.rightLegPivot.rotation.x = 0;
+            
+            // Play idle animation if stopped
+            if (gameSpeed < 0.1 && runAction && runAction.isRunning()) {
+                runAction.stop();
+                if(idleAction) idleAction.play();
+            }
         }
 
-        player.mesh.position.x += (targetX - player.mesh.position.x) * 0.1;
-        playerLight.position.x = player.mesh.position.x;
+        playerModel.position.x += (targetX - playerModel.position.x) * 0.1;
+        playerLight.position.x = playerModel.position.x;
 
-        if (isJumping || player.mesh.position.y > 0) {
-            player.mesh.position.y += jumpVelocity;
+        if (isJumping || playerModel.position.y > 0) {
+            playerModel.position.y += jumpVelocity;
             jumpVelocity += GRAVITY;
             
-            if (player.mesh.position.y <= 0) {
-                player.mesh.position.y = 0;
+            if (playerModel.position.y <= 0) {
+                playerModel.position.y = 0;
                 isJumping = false;
                 jumpVelocity = 0;
             }
@@ -502,10 +466,11 @@ function animate() {
         obstacles.forEach(obs => {
             obs.position.z += gameSpeed;
             
-            // Collision Logic (Approximated for humanoid)
-            const distZ = Math.abs(obs.position.z - player.mesh.position.z);
-            const distX = Math.abs(obs.position.x - player.mesh.position.x);
-            const distY = Math.abs(obs.position.y - (player.mesh.position.y + 2.5)); // +2.5 for center of body
+            // Collision Logic with new Rigged Character
+            const distZ = Math.abs(obs.position.z - playerModel.position.z);
+            const distX = Math.abs(obs.position.x - playerModel.position.x);
+            // Player Y is at feet (0), so center of body is roughly +2.5
+            const distY = Math.abs(obs.position.y - (playerModel.position.y + 2.5)); 
             
             if (distZ < 2.5 && distX < 2.5 && distY < 3) {
                 // CRAAASH!
@@ -513,7 +478,7 @@ function animate() {
                 isPlaying = false;
                 finalScoreElement.innerText = `Final Score: ${Math.floor(score)}`;
                 gameOverScreen.classList.remove('hidden');
-                updateShopUI(); // Save any coins collected
+                updateShopUI(); 
             }
 
             if (obs.position.z > 20) {
@@ -529,12 +494,11 @@ function animate() {
                 c.mesh.position.z += gameSpeed;
                 c.mesh.rotation.y += 0.1;
                 
-                const distZ = Math.abs(c.mesh.position.z - player.mesh.position.z);
-                const distX = Math.abs(c.mesh.position.x - player.mesh.position.x);
-                const distY = Math.abs(c.mesh.position.y - (player.mesh.position.y + 2.5));
+                const distZ = Math.abs(c.mesh.position.z - playerModel.position.z);
+                const distX = Math.abs(c.mesh.position.x - playerModel.position.x);
+                const distY = Math.abs(c.mesh.position.y - (playerModel.position.y + 2.5));
                 
                 if (distZ < 2 && distX < 2 && distY < 3) {
-                    // Collect coin
                     c.active = false;
                     c.mesh.visible = false;
                     coins += 1;
@@ -562,7 +526,6 @@ function animate() {
             path.position.z = -400;
         }
     } else {
-        // Spin coins on start screen
         coinObjects.forEach(c => { if(c.active) c.mesh.rotation.y += 0.05; });
     }
     
@@ -586,12 +549,19 @@ startBtn.addEventListener('click', () => {
     startAmbientSound();
     resetGame();
     isPlaying = true;
+    
+    // Switch to run animation immediately when starting
+    if (idleAction) idleAction.stop();
+    if (runAction) runAction.play();
 });
 
 restartBtn.addEventListener('click', () => {
     gameOverScreen.classList.add('hidden');
     resetGame();
     isPlaying = true;
+    
+    if (idleAction) idleAction.stop();
+    if (runAction) runAction.play();
 });
 
 animate();
