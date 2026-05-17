@@ -69,7 +69,24 @@ const AudioEngine = {
                 osc.frequency.setValueAtTime(35, t + 0.6);
                 gain.gain.setValueAtTime(0.25, t);
                 gain.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
-                osc.start(t); osc.stop(t + 0.8);
+                break;
+            case 'thunder':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(80, t);
+                osc.frequency.linearRampToValueAtTime(30, t + 1.2);
+                gain.gain.setValueAtTime(0.7, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+                osc.start(t); osc.stop(t + 1.5);
+                // Low-frequency noise/rumble layer
+                const t2 = this.ctx.createOscillator();
+                const tg2 = this.ctx.createGain();
+                t2.connect(tg2); tg2.connect(this.ctx.destination);
+                t2.type = 'triangle';
+                t2.frequency.setValueAtTime(45, t);
+                t2.frequency.linearRampToValueAtTime(20, t + 1.8);
+                tg2.gain.setValueAtTime(0.8, t);
+                tg2.gain.exponentialRampToValueAtTime(0.01, t + 2.0);
+                t2.start(t); t2.stop(t + 2.0);
                 break;
         }
     },

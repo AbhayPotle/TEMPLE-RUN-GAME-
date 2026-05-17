@@ -68,8 +68,8 @@ const pth=new THREE.Mesh(new THREE.PlaneGeometry(20,1200),
     new THREE.MeshStandardMaterial({map:groundTex,roughness:0.6,metalness:0.2}));
 pth.rotation.x=-Math.PI/2;pth.position.set(0, 0.06, 400);pth.receiveShadow=true;scene.add(pth);
 
-// Path edges
-const edgeMat=new THREE.MeshBasicMaterial({color:0x332200});
+// Path edges (Glowing Red Cursed Runes)
+const edgeMat=new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:1.5});
 [-10,10].forEach(x=>{
     const e=new THREE.Mesh(new THREE.PlaneGeometry(0.3,1200),edgeMat);
     e.rotation.x=-Math.PI/2;e.position.set(x,0.08,400);scene.add(e);
@@ -193,12 +193,12 @@ monBody.position.y=4;monG.add(monBody);
 });
 monG.position.set(0,0,-15);scene.add(monG);
 
-// PARTICLES
-const pCnt=300;const pGeo=new THREE.BufferGeometry();
+// PARTICLES (Hot Blazing Lava Embers)
+const pCnt=400;const pGeo=new THREE.BufferGeometry();
 const pPos=new Float32Array(pCnt*3);
 for(let i=0;i<pCnt;i++){pPos[i*3]=Math.random()*80-40;pPos[i*3+1]=Math.random()*25+1;pPos[i*3+2]=Math.random()*100;}
 pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
-const parts=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0xff8800,size:0.15,transparent:true,opacity:0.5}));
+const parts=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0xff3a00,size:0.25,transparent:true,opacity:0.65}));
 scene.add(parts);
 
 // LOAD REALISTIC CHARACTER
@@ -275,12 +275,12 @@ function onResults(r){
         drawConnectors(cCtx,lm,HAND_CONNECTIONS,{color:'#00ff88',lineWidth:2});
         drawLandmarks(cCtx,lm,{color:'#ff2233',lineWidth:1,radius:3});
         const hx=lm[0].x,hy=lm[0].y;
-        if(hx>0.65)targetLane=0; else if(hx<0.35)targetLane=2; else targetLane=1;
+        if(hx>0.65)targetLane=2; else if(hx<0.35)targetLane=0; else targetLane=1;
         if(hy<0.25&&!isJump&&playerGroup.position.y<0.5){isJump=true;jumpV=0.55;AudioEngine.play('jump');gestIcon.textContent='⬆️';gestTxt.textContent='JUMP!';}
         else if(hy>0.75&&!isSlide&&!isJump){isSlide=true;setTimeout(()=>{isSlide=false;},600);AudioEngine.play('slide');gestIcon.textContent='⬇️';gestTxt.textContent='SLIDE!';}
         else if(!isJump&&!isSlide){
-            if(hx>0.65){gestIcon.textContent='⬅️';gestTxt.textContent='LEFT';}
-            else if(hx<0.35){gestIcon.textContent='➡️';gestTxt.textContent='RIGHT';}
+            if(hx>0.65){gestIcon.textContent='➡️';gestTxt.textContent='RIGHT';}
+            else if(hx<0.35){gestIcon.textContent='⬅️';gestTxt.textContent='LEFT';}
             else{gestIcon.textContent='✋';gestTxt.textContent='CENTER';}
         }
         webcamSt.textContent='Hand Detected ✅';webcamSt.style.color='#00ff88';
@@ -318,7 +318,7 @@ function reset(){
     scoreEl.textContent='0';coinsEl.textContent='0';comboEl.classList.add('hidden');
 }
 
-let growlT=0;
+let growlT=0, lightningT=0;
 // MAIN LOOP
 function tick(){
     requestAnimationFrame(tick);
@@ -326,6 +326,23 @@ function tick(){
     if(mixer)mixer.update(dt*(G.speed>0.3?G.speed:0.5));
 
     if(!G.playing){ren.render(scene,cam);return;}
+
+    // Pulsing blood-red runes along path borders for aggressive aesthetics
+    edgeMat.emissiveIntensity = 1.2 + Math.sin(Date.now() * 0.006) * 0.6;
+
+    // Atmospheric dynamic lightning strikes & rumbling thunder
+    lightningT += dt;
+    if(lightningT > 10 + Math.random() * 8){
+        moon.intensity = 15;
+        scene.fog.color.setHex(0xdce6ff);
+        scene.background.setHex(0xdce6ff);
+        AudioEngine.play('thunder');
+        lightningT = 0;
+    } else {
+        moon.intensity += (2 - moon.intensity) * 0.12;
+        scene.fog.color.lerp(new THREE.Color(0x030508), 0.12);
+        scene.background.lerp(new THREE.Color(0x020304), 0.12);
+    }
 
     if(handOn){G.speed+=(G.base-G.speed)*0.05;}else{G.speed*=0.95;}
 
@@ -344,7 +361,7 @@ function tick(){
         playerGroup.position.y+=jumpV;jumpV-=0.025;
         if(playerGroup.position.y<=0){playerGroup.position.y=0;isJump=false;jumpV=0;}
     }
-    if(isSlide){playerGroup.scale.y=0.5;}else{playerGroup.scale.y+=(1-playerGroup.scale.y)*0.15;}
+    playerGroup.scale.set(1,1,1);
 
     if(G.speed>0.2){G.score+=G.speed*0.15;G.dist+=G.speed*0.5;G.base+=0.0003;}
     scoreEl.textContent=Math.floor(G.score);
