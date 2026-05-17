@@ -311,21 +311,6 @@ playerGroup.position.set(0,0,5);scene.add(playerGroup);
 playerGroup.add(torch);
 playerGroup.add(torchTarget);
 
-// 8K Volumetric Light Cone for realistic flashlight beam
-const coneGeo = new THREE.ConeGeometry(3.5, 45, 32, 1, true);
-coneGeo.rotateX(Math.PI / 2);
-coneGeo.translate(0, 3.8, 22.5); // Pivot at flashlight height, extending forward
-const coneMat = new THREE.MeshBasicMaterial({
-    color: 0xffaa44,
-    transparent: true,
-    opacity: 0.15,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-    depthWrite: false
-});
-const lightCone = new THREE.Mesh(coneGeo, coneMat);
-playerGroup.add(lightCone);
-
 // Placeholder while model loads
 const phBody=new THREE.Mesh(THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.5,1.5,4,8):new THREE.CylinderGeometry(0.5,0.5,2.5,8),
     new THREE.MeshStandardMaterial({color:0xcc3333,roughness:0.6}));
