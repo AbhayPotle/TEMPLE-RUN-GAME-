@@ -19,7 +19,10 @@
 
     <!-- UI Overlay -->
     <div id="ui-layer">
-        <div id="score">Score: 0</div>
+        <div id="top-bar">
+            <div id="score">Score: 0</div>
+            <div id="coin-display">💰 <span id="coin-count">0</span></div>
+        </div>
         <div id="instructions">Raise Hand: Forward | Swipe L/R: Turn | Swipe Up: Jump</div>
         
         <!-- Webcam feed and hand tracking canvas for user visibility -->
@@ -30,6 +33,25 @@
         
         <div id="start-screen">
             <h1>TEMPLE RUN<br><span style="font-size: 0.5em; color: #ff3333;">CREEPY FOREST</span></h1>
+            
+            <div id="character-selection">
+                <h2>SELECT CHARACTER</h2>
+                <div class="char-cards">
+                    <div class="char-card" data-char="explorer" id="card-explorer">
+                        <h3>Explorer</h3>
+                        <p>Unlocked</p>
+                    </div>
+                    <div class="char-card locked" data-char="ninja" id="card-ninja">
+                        <h3>Ninja</h3>
+                        <p class="price">💰 50</p>
+                    </div>
+                    <div class="char-card locked" data-char="knight" id="card-knight">
+                        <h3>Knight</h3>
+                        <p class="price">💰 100</p>
+                    </div>
+                </div>
+            </div>
+
             <p>Show your hand to the camera to start.</p>
             <button id="start-btn">START GAME</button>
         </div>

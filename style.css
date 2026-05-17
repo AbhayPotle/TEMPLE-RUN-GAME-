@@ -27,14 +27,25 @@ body, html {
     pointer-events: none; /* Let clicks pass through to game if needed */
 }
 
-#score {
+#top-bar {
     position: absolute;
     top: 20px;
     left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+#score, #coin-display {
     color: #fff;
     font-size: 24px;
     font-weight: bold;
     text-shadow: 2px 2px 4px #000;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid #333;
 }
 
 #instructions {
@@ -119,4 +130,59 @@ button:hover {
 
 .hidden {
     display: none !important;
+}
+
+#character-selection {
+    margin: 20px 0;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #555;
+}
+
+#character-selection h2 {
+    margin-top: 0;
+    color: #ffd700;
+}
+
+.char-cards {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.char-card {
+    background: #222;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #444;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 120px;
+}
+
+.char-card:hover {
+    transform: translateY(-5px);
+    border-color: #ffd700;
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+}
+
+.char-card.selected {
+    border-color: #00ff00;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+    background: #1a331a;
+}
+
+.char-card.locked {
+    opacity: 0.7;
+    border-color: #ff3333;
+}
+
+.char-card h3 {
+    margin: 0 0 10px 0;
+}
+
+.price {
+    font-weight: bold;
+    color: #ffd700;
 }
