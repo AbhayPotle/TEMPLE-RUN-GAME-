@@ -39,11 +39,68 @@ moon.position.set(-20,40,-30);moon.castShadow=true;
 moon.shadow.mapSize.set(2048,2048);scene.add(moon);
 const chaseLight=new THREE.PointLight(0xff0000,5,50);
 chaseLight.position.set(0,5,40);scene.add(chaseLight);
-// Torch lights along path
-for(let i=0;i<6;i++){
-    const tl=new THREE.PointLight(0xff6600,3,25);
-    tl.position.set(i%2===0?-11:11,4,-i*80);scene.add(tl);
+// TORCHES WITH ACTIVE DYNAMIC FLAME PARTICLES & STANDS
+const torchGroups = [];
+const flameMaterial = new THREE.MeshBasicMaterial({
+    color: 0xff4500,
+    transparent: true,
+    opacity: 0.8,
+    blending: THREE.AdditiveBlending
+});
+const flameGeo = new THREE.SphereGeometry(0.18, 4, 4);
+
+for (let i = 0; i < 12; i++) {
+    const tg = new THREE.Group();
+    const x = i % 2 === 0 ? -10.8 : 10.8;
+    const z = -i * 70;
+    tg.position.set(x, 0.5, z);
+    
+    // Wood Torch stand cylinder mesh
+    const stand = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 4, 6),
+        new THREE.MeshStandardMaterial({color: 0x1f1107, roughness: 0.9})
+    );
+    stand.position.y = 2;
+    tg.add(stand);
+    
+    // Point light inside flame center
+    const pl = new THREE.PointLight(0xff7700, 5, 30);
+    pl.position.y = 4.2;
+    tg.add(pl);
+    
+    // Active flame sparks particle meshes
+    const parts = [];
+    for (let p = 0; p < 6; p++) {
+        const mesh = new THREE.Mesh(flameGeo, flameMaterial);
+        mesh.position.set(
+            (Math.random() - 0.5) * 0.15,
+            4.2 + Math.random() * 0.8,
+            (Math.random() - 0.5) * 0.15
+        );
+        mesh.userData.speedY = 0.05 + Math.random() * 0.05;
+        mesh.userData.baseY = 4.2;
+        tg.add(mesh);
+        parts.push(mesh);
+    }
+    tg.userData = { pl, parts, baseIntensity: 5 };
+    
+    scene.add(tg);
+    torchGroups.push(tg);
 }
+
+// Backlit Spooky Moon Aura Ring
+const moonAuraGeo = new THREE.RingGeometry(8, 12, 32);
+const moonAuraMat = new THREE.MeshBasicMaterial({
+    color: 0x4466ff,
+    transparent: true,
+    opacity: 0.15,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending
+});
+const moonAura = new THREE.Mesh(moonAuraGeo, moonAuraMat);
+moonAura.position.set(-20, 40, -120);
+moonAura.lookAt(0, 0, 0);
+scene.add(moonAura);
 
 // GROUND & TEXTURES
 const textureLoader = new THREE.TextureLoader();
@@ -345,25 +402,17 @@ async function initCameraDevices() {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(d => d.kind === 'videoinput');
         
-        if (videoDevices.length > 0) {
-            camSelect.innerHTML = '';
-            videoDevices.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.deviceId;
-                opt.textContent = d.label || `Camera ${camSelect.length + 1}`;
-                camSelect.appendChild(opt);
-            });
-            camSelect.classList.remove('hidden');
-            
-            // Default to first device
-            await startCameraStream(videoDevices[0].deviceId);
-        } else {
-            await startCameraStream(null);
-        }
-        
-        camSelect.addEventListener('change', async (e) => {
-            await startCameraStream(e.target.value);
+        // Exclusively scan for and target laptop's built-in/integrated webcam
+        let laptopCam = videoDevices.find(d => {
+            const label = d.label.toLowerCase();
+            return label.includes('integrated') || label.includes('webcam') || label.includes('built-in') || label.includes('front') || label.includes('facetime') || label.includes('camera');
         });
+        
+        // If a built-in webcam was found, bind exclusively to it; otherwise default to first hardware stream
+        const activeDeviceId = laptopCam ? laptopCam.deviceId : (videoDevices.length > 0 ? videoDevices[0].deviceId : null);
+        
+        camSelect.classList.add('hidden'); // Enforce laptop camera only, keeping select element hidden from view
+        await startCameraStream(activeDeviceId);
     } catch (err) {
         console.warn('Camera enumeration failed, using standard stream:', err);
         await startCameraStream(null);
@@ -413,6 +462,28 @@ function tick(){
 
     // Pulsing blood-red runes along path borders for aggressive aesthetics
     edgeMat.emissiveIntensity = 1.2 + Math.sin(Date.now() * 0.006) * 0.6;
+
+    // Animate active 3D wood torch sparks & organic flickering light intensity
+    torchGroups.forEach(tg => {
+        // Flicker light intensity organically
+        tg.userData.pl.intensity = tg.userData.baseIntensity + Math.sin(Date.now() * 0.008 + tg.position.z) * 1.5;
+        
+        // Rise and sway flame particles
+        tg.userData.parts.forEach(p => {
+            p.position.y += p.userData.speedY;
+            p.position.x += Math.sin(Date.now() * 0.01 + p.position.y) * 0.005;
+            
+            // Fade out as it rises
+            const progress = (p.position.y - p.userData.baseY) / 1.0;
+            p.scale.setScalar(Math.max(1.0 - progress, 0.01));
+            
+            if (p.position.y > p.userData.baseY + 1.0) {
+                p.position.y = p.userData.baseY;
+                p.position.x = (Math.random() - 0.5) * 0.15;
+                p.position.z = (Math.random() - 0.5) * 0.15;
+            }
+        });
+    });
 
     // Pulsing molten volcanic lava ground emissive creep for 8K realism
     gnd.material.emissiveIntensity = 0.35 + Math.sin(Date.now() * 0.003) * 0.15;
