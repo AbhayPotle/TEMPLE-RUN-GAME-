@@ -154,7 +154,7 @@ playerGroup.add(torch);
 playerGroup.add(torchTarget);
 
 // Placeholder while model loads
-const phBody=new THREE.Mesh(new THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.5,1.5,4,8):new THREE.CylinderGeometry(0.5,0.5,2.5,8),
+const phBody=new THREE.Mesh(THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.5,1.5,4,8):new THREE.CylinderGeometry(0.5,0.5,2.5,8),
     new THREE.MeshStandardMaterial({color:0xcc3333,roughness:0.6}));
 phBody.position.y=2;phBody.castShadow=true;playerGroup.add(phBody);
 const phHead=new THREE.Mesh(new THREE.SphereGeometry(0.45,8,8),
