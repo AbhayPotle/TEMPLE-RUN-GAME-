@@ -26,8 +26,8 @@ document.getElementById('game-container').appendChild(ren.domElement);
 
 // LIGHTS
 scene.add(new THREE.AmbientLight(0x1a1a2e,3));
-const torch = new THREE.SpotLight(0xffaa44, 25, 100, Math.PI / 5, 0.5, 1);
-torch.position.set(0, 5, 0);
+const torch = new THREE.SpotLight(0xffaa44, 28, 120, Math.PI / 6.5, 1.0, 1.2);
+torch.position.set(0, 3.5, 1.5);
 torch.castShadow = true;
 torch.shadow.mapSize.set(1024, 1024);
 torch.shadow.bias = -0.001;
@@ -147,9 +147,55 @@ function mkTree(x,z){
     }
     g.position.set(x,0,z);scene.add(g);trees.push(g);
 }
-for(let i=0;i<100;i++){
+for(let i=0;i<10;i++){
     const s=Math.random()>0.5?1:-1;
     mkTree(s*(13+Math.random()*60),Math.random()*900);
+}
+
+// GOTHIC RUINED TEMPLE ARCHES (BACKGROUND ARCHITECTURE)
+const arches = [];
+const archMat = new THREE.MeshStandardMaterial({color: 0x2b2b2e, roughness: 0.95, metalness: 0.05});
+function createArch(z) {
+    const group = new THREE.Group();
+    group.position.set(0, 0, z);
+    
+    // Left Pillar
+    const pL = new THREE.Mesh(new THREE.BoxGeometry(1.6, 15, 1.6), archMat);
+    pL.position.set(-11, 7.5, 0);
+    pL.castShadow = true; pL.receiveShadow = true;
+    group.add(pL);
+    
+    // Right Pillar
+    const pR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 15, 1.6), archMat);
+    pR.position.set(11, 7.5, 0);
+    pR.castShadow = true; pR.receiveShadow = true;
+    group.add(pR);
+    
+    // Top Arch Beam spanning over the runway
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(24, 1.8, 1.8), archMat);
+    beam.position.set(0, 15, 0);
+    beam.castShadow = true; beam.receiveShadow = true;
+    group.add(beam);
+    
+    scene.add(group);
+    arches.push(group);
+}
+for (let i = 0; i < 6; i++) {
+    createArch(-i * 150 - 100);
+}
+
+// Mossy Foreground Shrubs along path borders
+const foregroundShrubs = [];
+const shrubGeo = new THREE.DodecahedronGeometry(0.6, 1);
+const shrubMat = new THREE.MeshStandardMaterial({color: 0x091e09, roughness: 0.95});
+for (let i = 0; i < 15; i++) {
+    const s = new THREE.Mesh(shrubGeo, shrubMat);
+    const side = Math.random() > 0.5 ? 1 : -1;
+    s.position.set(side * (10.5 + Math.random() * 2), 0.2, -i * 50);
+    s.scale.set(1 + Math.random(), 0.5 + Math.random(), 1 + Math.random());
+    s.castShadow = true; s.receiveShadow = true;
+    scene.add(s);
+    foregroundShrubs.push(s);
 }
 
 // OBSTACLES
@@ -363,7 +409,7 @@ function onResults(r){
         const isFist = !indexExtended && !middleExtended && !ringExtended && !pinkyExtended;
 
         if(isPeace && !isJump && playerGroup.position.y < 0.5){
-            isJump=true;jumpV=0.55;AudioEngine.play('jump');
+            isJump=true;jumpV=0.70;AudioEngine.play('jump');
             gestIcon.textContent='✌️';gestTxt.textContent='JUMP!';
         } else if(isFist && !isSlide && !isJump){
             isSlide=true;setTimeout(()=>{isSlide=false;},600);AudioEngine.play('slide');
@@ -550,7 +596,7 @@ function tick(){
     cam.lookAt(playerGroup.position.x*0.5,3,playerGroup.position.z+20);
 
     if(isJump||playerGroup.position.y>0.05){
-        playerGroup.position.y+=jumpV;jumpV-=0.025;
+        playerGroup.position.y+=jumpV;jumpV-=0.05; // Extremely snappy accelerated gravity deceleration for immediate landing feedback
         if(playerGroup.position.y<=0){
             playerGroup.position.y=0;isJump=false;jumpV=0;
             triggerScreenShake();
@@ -563,6 +609,24 @@ function tick(){
 
     const spd=G.speed;
     trees.forEach(t=>{t.position.z-=spd;if(t.position.z<-30){t.position.z+=900;const s=Math.random()>0.5?1:-1;t.position.x=s*(13+Math.random()*60);}});
+    
+    // Scroll background gothic temple arches
+    arches.forEach(a => {
+        a.position.z -= spd;
+        if(a.position.z < -30) {
+            a.position.z += 900;
+        }
+    });
+
+    // Scroll mossy foreground shrubs
+    foregroundShrubs.forEach(s => {
+        s.position.z -= spd;
+        if(s.position.z < -20){
+            s.position.z += 750;
+            s.position.x = (Math.random() > 0.5 ? 1 : -1) * (10.5 + Math.random() * 2);
+        }
+    });
+
     groundTex.offset.y -= spd * 0.1;
     forestTex.offset.y -= spd * 0.1;
 
@@ -573,7 +637,7 @@ function tick(){
         let hit=false;
         if(dz<2.2&&dx<2.2){
             if(o.userData.type===0){
-                if(py<2.2)hit=true; // Root obstacle: jump over!
+                if(py<1.4)hit=true; // Root obstacle: jump over!
             }else if(o.userData.type===1){
                 if(!isSlide)hit=true; // Branch obstacle: slide under!
             }else{
