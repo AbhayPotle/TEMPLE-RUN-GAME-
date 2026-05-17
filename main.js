@@ -305,8 +305,72 @@ function onResults(r){
 const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
 hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
 hands.onResults(onResults);
-const camObj=new Camera(vidEl,{onFrame:async()=>{await hands.send({image:vidEl});},width:320,height:240});
-camObj.start();
+
+const camSelect = document.getElementById('camera-select');
+let activeStream = null;
+
+async function startCameraStream(deviceId) {
+    if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+    }
+    const constraints = {
+        video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 320 }, height: { ideal: 240 } } : { width: { ideal: 320 }, height: { ideal: 240 } }
+    };
+    try {
+        activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+        vidEl.srcObject = activeStream;
+        
+        // Feed video frames into MediaPipe hands on frame update
+        const processFrame = async () => {
+            if (activeStream && activeStream.active && !vidEl.paused) {
+                try {
+                    await hands.send({ image: vidEl });
+                } catch(e){}
+                requestAnimationFrame(processFrame);
+            }
+        };
+        vidEl.onplay = () => { requestAnimationFrame(processFrame); };
+        await vidEl.play();
+    } catch (err) {
+        console.error('Failed to start camera stream:', err);
+    }
+}
+
+async function initCameraDevices() {
+    try {
+        // Request initial permission to unlock device labels
+        const initialStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        initialStream.getTracks().forEach(track => track.stop());
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        
+        if (videoDevices.length > 0) {
+            camSelect.innerHTML = '';
+            videoDevices.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.deviceId;
+                opt.textContent = d.label || `Camera ${camSelect.length + 1}`;
+                camSelect.appendChild(opt);
+            });
+            camSelect.classList.remove('hidden');
+            
+            // Default to first device
+            await startCameraStream(videoDevices[0].deviceId);
+        } else {
+            await startCameraStream(null);
+        }
+        
+        camSelect.addEventListener('change', async (e) => {
+            await startCameraStream(e.target.value);
+        });
+    } catch (err) {
+        console.warn('Camera enumeration failed, using standard stream:', err);
+        await startCameraStream(null);
+    }
+}
+
+initCameraDevices();
 
 // LOADING
 setTimeout(()=>{loadScr.classList.add('fade-out');setTimeout(()=>{loadScr.style.display='none';},800);},3500);
