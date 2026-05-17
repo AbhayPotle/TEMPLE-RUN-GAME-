@@ -103,14 +103,69 @@ const obsMats=[
     new THREE.MeshStandardMaterial({map:groundTex,color:0xff8888,roughness:0.6,emissive:0x441111,emissiveIntensity:0.6})
 ];
 function mkObs(z){
-    const type=Math.floor(Math.random()*3);let mesh;
-    if(type===0){mesh=new THREE.Mesh(new THREE.BoxGeometry(3.5,4,2),obsMats[0]);}
-    else if(type===1){mesh=new THREE.Mesh(new THREE.CylinderGeometry(1,1,4,8),obsMats[1]);mesh.rotation.z=Math.PI/2;}
-    else{mesh=new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.2,5,8),obsMats[2]);
-        const fl=new THREE.PointLight(0xff4400,3,15);fl.position.y=3;mesh.add(fl);}
-    mesh.userData={type,lane:Math.floor(Math.random()*3),nm:false};
-    mesh.position.set(LANES[mesh.userData.lane],type===1?1.5:2.5,z);
-    mesh.castShadow=true;scene.add(mesh);obs.push(mesh);
+    const type=Math.floor(Math.random()*3);
+    const group=new THREE.Group();
+    
+    if(type===0){
+        // Gnarled Tree Root Obstacle (Jump over!)
+        const root1=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,5,8),obsMats[1]);
+        root1.rotation.z=Math.PI/2;
+        root1.position.set(0,0.5,0);
+        root1.castShadow=true;root1.receiveShadow=true;
+        group.add(root1);
+        
+        const root2=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.5,3,8),obsMats[1]);
+        root2.rotation.set(0.3,0.5,Math.PI/4);
+        root2.position.set(1.6,0.8,-0.5);
+        root2.castShadow=true;root2.receiveShadow=true;
+        group.add(root2);
+    }
+    else if(type===1){
+        // Creepy Tree Branch Obstacle (Slide under!)
+        const mainBranch=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.5,6,8),obsMats[1]);
+        mainBranch.rotation.z=Math.PI/2 - 0.2;
+        mainBranch.position.set(0,4.2,0);
+        mainBranch.castShadow=true;mainBranch.receiveShadow=true;
+        group.add(mainBranch);
+        
+        const twig1=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,2,6),obsMats[1]);
+        twig1.rotation.set(0.5,0,0.4);
+        twig1.position.set(-1.8,3.2,0.5);
+        twig1.castShadow=true;twig1.receiveShadow=true;
+        group.add(twig1);
+
+        const twig2=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,1.8,6),obsMats[1]);
+        twig2.rotation.set(-0.3,0,-0.6);
+        twig2.position.set(1.8,3.0,-0.4);
+        twig2.castShadow=true;twig2.receiveShadow=true;
+        group.add(twig2);
+    }
+    else{
+        // Gnarled Tree Stump with Glowing Cursed Spikes (Lane Switch!)
+        const stump=new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.2,5,8),obsMats[2]);
+        stump.position.set(0,2.5,0);
+        stump.castShadow=true;stump.receiveShadow=true;
+        group.add(stump);
+        
+        const branchOut1=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,3,6),obsMats[2]);
+        branchOut1.rotation.set(0.8,0,1.2);
+        branchOut1.position.set(1.2,3.5,0);
+        branchOut1.castShadow=true;branchOut1.receiveShadow=true;
+        group.add(branchOut1);
+
+        const branchOut2=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,2.5,6),obsMats[2]);
+        branchOut2.rotation.set(-0.8,0.5,-1.2);
+        branchOut2.position.set(-1.2,2.8,0);
+        branchOut2.castShadow=true;branchOut2.receiveShadow=true;
+        group.add(branchOut2);
+
+        const fl=new THREE.PointLight(0xff4400,3,15);
+        fl.position.set(0,3,0);
+        group.add(fl);
+    }
+    group.userData={type,lane:Math.floor(Math.random()*3),nm:false};
+    group.position.set(LANES[group.userData.lane],0,z);
+    scene.add(group);obs.push(group);
 }
 for(let i=0;i<20;i++)mkObs(80+i*50+Math.random()*30);
 
@@ -166,6 +221,7 @@ gltfLoader.load('https://threejs.org/examples/models/gltf/Soldier.glb',
     (gltf)=>{
         playerModel=gltf.scene;
         playerModel.scale.set(2.5,2.5,2.5);
+        playerModel.rotation.y = Math.PI; // Face forward along the path
         playerModel.traverse(c=>{
             if(c.isMesh){
                 c.castShadow=true;
@@ -302,8 +358,17 @@ function tick(){
         if(!o.visible)return;o.position.z-=spd;
         if(o.position.z<-20){o.position.z+=1000;o.userData.lane=Math.floor(Math.random()*3);o.position.x=LANES[o.userData.lane];o.visible=true;}
         const dz=Math.abs(o.position.z-playerGroup.position.z),dx=Math.abs(o.position.x-playerGroup.position.x),py=playerGroup.position.y;
-        const canDodge=(o.userData.type===1&&isSlide);
-        if(dz<2&&dx<2.2&&!canDodge&&py<3.5&&dz<1.5){gameOver();return;}
+        let hit=false;
+        if(dz<2.2&&dx<2.2){
+            if(o.userData.type===0){
+                if(py<2.2)hit=true; // Root obstacle: jump over!
+            }else if(o.userData.type===1){
+                if(!isSlide)hit=true; // Branch obstacle: slide under!
+            }else{
+                hit=true; // Stump obstacle: lane-switch!
+            }
+        }
+        if(hit&&dz<1.5){gameOver();return;}
         if(dz<4&&dz>2&&dx<3&&!o.userData.nm){
             o.userData.nm=true;G.combo++;if(G.combo>G.bestCombo)G.bestCombo=G.combo;
             AudioEngine.play('nearmiss');
