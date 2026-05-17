@@ -26,9 +26,14 @@ document.getElementById('game-container').appendChild(ren.domElement);
 
 // LIGHTS
 scene.add(new THREE.AmbientLight(0x1a1a2e,3));
-const torch=new THREE.PointLight(0xff8800,8,80);
-torch.position.set(0,6,8);torch.castShadow=true;
-torch.shadow.mapSize.set(1024,1024);scene.add(torch);
+const torch = new THREE.SpotLight(0xffaa44, 25, 100, Math.PI / 5, 0.5, 1);
+torch.position.set(0, 5, 0);
+torch.castShadow = true;
+torch.shadow.mapSize.set(1024, 1024);
+torch.shadow.bias = -0.001;
+const torchTarget = new THREE.Object3D();
+torchTarget.position.set(0, 0, 30);
+torch.target = torchTarget;
 const moon=new THREE.DirectionalLight(0x4466ff,2);
 moon.position.set(-20,40,-30);moon.castShadow=true;
 moon.shadow.mapSize.set(2048,2048);scene.add(moon);
@@ -40,21 +45,34 @@ for(let i=0;i<6;i++){
     tl.position.set(i%2===0?-11:11,4,-i*80);scene.add(tl);
 }
 
-// GROUND
+// GROUND & TEXTURES
+const textureLoader = new THREE.TextureLoader();
+const groundTex = textureLoader.load('assets/ground_texture.png');
+groundTex.wrapS = THREE.RepeatWrapping;
+groundTex.wrapT = THREE.RepeatWrapping;
+groundTex.repeat.set(2, 120);
+groundTex.anisotropy = ren.capabilities.getMaxAnisotropy();
+
+const forestTex = textureLoader.load('assets/ground_texture.png');
+forestTex.wrapS = THREE.RepeatWrapping;
+forestTex.wrapT = THREE.RepeatWrapping;
+forestTex.repeat.set(30, 120);
+forestTex.anisotropy = ren.capabilities.getMaxAnisotropy();
+
 const gnd=new THREE.Mesh(new THREE.PlaneGeometry(300,1200),
-    new THREE.MeshStandardMaterial({color:0x0a110a,roughness:0.95}));
-gnd.rotation.x=-Math.PI/2;gnd.position.z=100;gnd.receiveShadow=true;scene.add(gnd);
+    new THREE.MeshStandardMaterial({map:forestTex,roughness:0.95}));
+gnd.rotation.x=-Math.PI/2;gnd.position.set(0, 0, 400);gnd.receiveShadow=true;scene.add(gnd);
 
 // PATH
 const pth=new THREE.Mesh(new THREE.PlaneGeometry(20,1200),
-    new THREE.MeshStandardMaterial({color:0x1a1008,roughness:0.85}));
-pth.rotation.x=-Math.PI/2;pth.position.y=0.06;pth.position.z=100;pth.receiveShadow=true;scene.add(pth);
+    new THREE.MeshStandardMaterial({map:groundTex,roughness:0.6,metalness:0.2}));
+pth.rotation.x=-Math.PI/2;pth.position.set(0, 0.06, 400);pth.receiveShadow=true;scene.add(pth);
 
 // Path edges
 const edgeMat=new THREE.MeshBasicMaterial({color:0x332200});
 [-10,10].forEach(x=>{
     const e=new THREE.Mesh(new THREE.PlaneGeometry(0.3,1200),edgeMat);
-    e.rotation.x=-Math.PI/2;e.position.set(x,0.08,100);scene.add(e);
+    e.rotation.x=-Math.PI/2;e.position.set(x,0.08,400);scene.add(e);
 });
 
 // TREES
@@ -80,9 +98,9 @@ for(let i=0;i<100;i++){
 // OBSTACLES
 const obs=[];
 const obsMats=[
-    new THREE.MeshStandardMaterial({color:0x555555,roughness:0.6,metalness:0.2}),
-    new THREE.MeshStandardMaterial({color:0x553300,roughness:0.8}),
-    new THREE.MeshStandardMaterial({color:0x880000,roughness:0.5,emissive:0x330000,emissiveIntensity:0.5})
+    new THREE.MeshStandardMaterial({map:groundTex,roughness:0.8,metalness:0.1}),
+    new THREE.MeshStandardMaterial({map:groundTex,color:0x8b5a2b,roughness:0.9}),
+    new THREE.MeshStandardMaterial({map:groundTex,color:0xff8888,roughness:0.6,emissive:0x441111,emissiveIntensity:0.6})
 ];
 function mkObs(z){
     const type=Math.floor(Math.random()*3);let mesh;
@@ -132,6 +150,8 @@ scene.add(parts);
 const gltfLoader=new THREE.GLTFLoader();
 const playerGroup=new THREE.Group();
 playerGroup.position.set(0,0,5);scene.add(playerGroup);
+playerGroup.add(torch);
+playerGroup.add(torchTarget);
 
 // Placeholder while model loads
 const phBody=new THREE.Mesh(new THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.5,1.5,4,8):new THREE.CylinderGeometry(0.5,0.5,2.5,8),
@@ -146,7 +166,16 @@ gltfLoader.load('https://threejs.org/examples/models/gltf/Soldier.glb',
     (gltf)=>{
         playerModel=gltf.scene;
         playerModel.scale.set(2.5,2.5,2.5);
-        playerModel.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+        playerModel.traverse(c=>{
+            if(c.isMesh){
+                c.castShadow=true;
+                c.receiveShadow=true;
+                if(c.material){
+                    c.material.color.setHex(0xd2b48c); // Khaki adventurer explorer tint
+                    c.material.roughness = 0.8;
+                }
+            }
+        });
         playerGroup.remove(phBody);playerGroup.remove(phHead);
         playerGroup.add(playerModel);
         mixer=new THREE.AnimationMixer(playerModel);
@@ -249,7 +278,6 @@ function tick(){
 
     const tx=LANES[targetLane];
     playerGroup.position.x+=(tx-playerGroup.position.x)*0.12;
-    torch.position.set(playerGroup.position.x,6,playerGroup.position.z-2);
 
     // Camera follows player smoothly from behind
     cam.position.x+=(playerGroup.position.x*0.3-cam.position.x)*0.05;
@@ -267,8 +295,8 @@ function tick(){
 
     const spd=G.speed;
     trees.forEach(t=>{t.position.z-=spd;if(t.position.z<-30){t.position.z+=900;const s=Math.random()>0.5?1:-1;t.position.x=s*(13+Math.random()*60);}});
-    gnd.position.z-=spd;pth.position.z-=spd;
-    if(gnd.position.z<0){gnd.position.z+=100;pth.position.z+=100;}
+    groundTex.offset.y -= spd * 0.1;
+    forestTex.offset.y -= spd * 0.1;
 
     obs.forEach(o=>{
         if(!o.visible)return;o.position.z-=spd;
@@ -302,11 +330,19 @@ function tick(){
     growlT+=spd;if(growlT>200){AudioEngine.play('growl');growlT=0;}
 
     const pp=parts.geometry.attributes.position.array;
-    for(let i=0;i<pCnt;i++){pp[i*3+2]-=spd*0.5;pp[i*3+1]+=Math.sin(Date.now()*0.002+i)*0.02;
-        if(pp[i*3+2]<-20){pp[i*3+2]+=100;pp[i*3]=Math.random()*80-40;pp[i*3+1]=Math.random()*25+1;}}
+    for(let i=0;i<pCnt;i++){
+        pp[i*3+2]-=spd*0.5;
+        pp[i*3+1]+=Math.sin(Date.now()*0.002+i)*0.02;
+        pp[i*3]+=Math.cos(Date.now()*0.001+i)*0.01;
+        if(pp[i*3+2]<-20){
+            pp[i*3+2]+=100;
+            pp[i*3]=Math.random()*80-40;
+            pp[i*3+1]=Math.random()*25+1;
+        }
+    }
     parts.geometry.attributes.position.needsUpdate=true;
 
-    torch.intensity=8+Math.sin(Date.now()*0.01)*2;
+    torch.intensity=25+Math.sin(Date.now()*0.01)*5;
     speedBar.style.height=Math.min(G.speed/4,1)*100+'%';
     if(!handOn&&G.speed<0.3)warnFlash.classList.remove('hidden');else warnFlash.classList.add('hidden');
 
