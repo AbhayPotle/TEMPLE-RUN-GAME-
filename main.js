@@ -402,13 +402,29 @@ async function initCameraDevices() {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(d => d.kind === 'videoinput');
         
-        // Exclusively scan for and target laptop's built-in/integrated webcam
+        // Helper to identify and filter out mobile webcam helpers and virtual streams
+        const isMobileOrVirtual = (lbl) => {
+            const l = lbl.toLowerCase();
+            return l.includes('poco') || l.includes('phone') || l.includes('mobile') || 
+                   l.includes('link to windows') || l.includes('droidcam') || 
+                   l.includes('virtual') || l.includes('obs') || l.includes('epoccam') || l.includes('ivcam');
+        };
+
+        // Enforce scan strictly for the laptop's built-in webcam hardware
         let laptopCam = videoDevices.find(d => {
             const label = d.label.toLowerCase();
-            return label.includes('integrated') || label.includes('webcam') || label.includes('built-in') || label.includes('front') || label.includes('facetime') || label.includes('camera');
+            if (isMobileOrVirtual(label)) return false;
+            return label.includes('integrated') || label.includes('built-in') || 
+                   label.includes('front') || label.includes('facetime') || 
+                   label.includes('webcam') || label.includes('camera');
         });
         
-        // If a built-in webcam was found, bind exclusively to it; otherwise default to first hardware stream
+        // Fallback to any non-mobile camera if direct match failed
+        if (!laptopCam) {
+            laptopCam = videoDevices.find(d => !isMobileOrVirtual(d.label));
+        }
+        
+        // Final fallback to first device
         const activeDeviceId = laptopCam ? laptopCam.deviceId : (videoDevices.length > 0 ? videoDevices[0].deviceId : null);
         
         camSelect.classList.add('hidden'); // Enforce laptop camera only, keeping select element hidden from view
