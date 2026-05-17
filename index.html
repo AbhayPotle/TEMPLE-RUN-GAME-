@@ -28,14 +28,23 @@
     <div id="ui-layer">
         <div id="top-bar">
             <div id="score">Score: 0</div>
+            <div id="combo-display" class="hidden">🔥 COMBO x<span id="combo-count">1</span></div>
             <div id="coin-display">💰 <span id="coin-count">0</span></div>
         </div>
         <div id="instructions">Raise Hand: Forward | Swipe L/R: Turn | Swipe Up: Jump</div>
+        
+        <!-- Lightning Flash Overlay -->
+        <div id="lightning-flash"></div>
         
         <!-- Webcam feed and hand tracking canvas for user visibility -->
         <div class="webcam-container">
             <video id="input_video" class="input_video" autoplay playsinline></video>
             <canvas id="output_canvas" class="output_canvas" width="320" height="240"></canvas>
+        </div>
+        
+        <!-- Cinematic Intro Overlay -->
+        <div id="cinematic-intro" class="hidden">
+            <div id="intro-text"></div>
         </div>
         
         <div id="start-screen">
@@ -56,6 +65,10 @@
                         <h3>Knight</h3>
                         <p class="price">💰 100</p>
                     </div>
+                    <div class="char-card locked" data-char="adventurer" id="card-adventurer">
+                        <h3>Adventurer</h3>
+                        <p class="price">💰 150</p>
+                    </div>
                 </div>
             </div>
 
@@ -66,6 +79,7 @@
         <div id="game-over-screen" class="hidden">
             <h1>GAME OVER</h1>
             <p id="final-score">Score: 0</p>
+            <p id="final-coins">Coins earned: 0</p>
             <button id="restart-btn">RETRY</button>
         </div>
     </div>
