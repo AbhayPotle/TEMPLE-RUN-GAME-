@@ -35,44 +35,7 @@ The game is deployed and fully accessible on multiple premium cloud platforms:
 
 ---
 
-## 🛠️ Technology Stack & Engineering Techniques
-
-This game stands as a modern demonstration of high-performance web engineering. Below is an exhaustive breakdown of the architectural layers, development techniques, and technical stacks integrated into the codebase:
-
-### 1. 🌐 Core Frontend & Markup Architecture
-*   **HTML5 (HyperText Markup Language)**
-    *   **Structure & Semantics**: Engineered using semantically clean HTML5 to layout the immersive spatial panels, overlays, and game canvas container.
-    *   **High-Performance Canvas**: Features a dedicated `<canvas>` container for full-viewport WebGL rendering and video feed overlays.
-    *   **Webcam Viewport Integration**: Leverages native video tagging to process incoming webcam stream matrices on the client side without server roundtrips.
-*   **CSS3 (Advanced Styling & Hardware Acceleration)**
-    *   **Vanilla Presentation Layer**: Written in clean, modular CSS3 to maintain complete structural flexibility and maximum rendering speeds without the bloat of external CSS utilities.
-    *   **Backdrop Filter Magic**: Employs frosted glassmorphism visuals (`backdrop-filter: blur()`) to create premium, translucent HUD elements.
-    *   **Aesthetic Keyframe Animations**: Implements dynamic custom keyframe cycles for pulsing blood-red warning screens, cinematic introduction typography crawls, and violent screen-shaking effects (`transform: translate3d()`) triggered during game-over crashes or high-stress dodges.
-*   **JavaScript (Modern ES6+ Core Logic)**
-    *   **Object-Oriented Game State**: Uses a structured game state object (`G`) to manage, scale, and adjust difficulty configurations in real time.
-    *   **Vector Physics & Math Matrix**: Handles real-time coordinates, gravity deceleration curves, linear lane interpolations, and high-frequency collision detection calculations.
-    *   **Dynamic DOM Bindings**: Manages real-time data syncs between the Three.js game state and HTML overlays (score tracking, dynamic combo meters, speed bars).
-
-### 2. 🤖 Specialized Computer Vision & 3D WebGL Engines
-*   **Three.js (Advanced 3D WebGL Graphics Pipeline)**
-    *   **Volumetric Fog**: Harnesses `THREE.FogExp2` to simulate a dense, creepy wilderness atmosphere.
-    *   **ACES Filmic Color Grading**: Configured using premium tone mappings (`ACESFilmicToneMapping`) to replicate cinematic, highly saturated lighting values.
-    *   **Soft Shadow System**: Utilizes high-resolution `THREE.PCFSoftShadowMap` shadows for realistic tree shadows and torch fire illumination.
-    *   **Procedural Particle Engines**: Drives 400 floating lava spark embers using active GPU buffer geometries (`THREE.BufferGeometry`) and additive blending techniques.
-*   **Google MediaPipe Hands (Real-time AI Hand Gesture Recognition)**
-    *   **Landmark Tracking**: Connects to the official MediaPipe CDN to process 21 3D hand coordinates instantly inside the browser sandbox.
-    *   **Custom Gesture Recognition Algorithms**: Matches coordinate distances to classify complex gestures like "Peace Sign" (✌️) for jumping and "Closed Fist" (✊) for sliding.
-    *   **Active Hardware Enumeration**: Scans all `videoinput` devices, automatically parsing and selecting integrated laptop webcams while avoiding virtual streams.
-
-### 3. 🔊 Sound Synthesizer & Hardware APIs
-*   **HTML5 Web Audio API (Programmatic Sound Synthesis)**
-    *   **Mathematical Wave Synthesizers**: Leverages oscillators (`sine`, `sawtooth`, `triangle`, `square`) to produce instant arcade audio feedback on-the-fly.
-    *   **Low-Frequency Oscillators (LFO)**: Combines a primary `triangle` oscillator with an LFO to synthesise organic, variable ambient creepy wind sweeps.
-    *   **Exponential Ramp Sweeps**: Commands precise frequency drops and gains (e.g. sweep from `200Hz` to `600Hz` for jumping) using web audio automation.
-*   **MediaDevices API (Video Hardware Sandbox)**
-    *   **Secure Capture Layer**: Coordinates user media queries (`getUserMedia`) to securely access the user webcam feeds with proper fallback permissions.
-
-### 4. 🔮 Paradigm: Vibe Coding
+Paradigm: Vibe Coding
 *   **AI Agent Pair Programming**: Built from start to finish via **Vibe Coding**—where the developer defines high-level design specifications, aesthetic patterns, and system guidelines, while the AI Agent translates these guidelines into flawless architectural blocks. This drastically cut down standard boilerplate timelines and maximized visual optimization, demonstrating the modern peak of software craftsmanship.
 
 ---
