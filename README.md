@@ -1,6 +1,17 @@
-# 🏃 Temple Run: Cursed Forest
+<div align="center">
+  <img src="splash.png" width="680" alt="Temple Run: Cursed Forest Splash" style="border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" />
 
-> **An AI-powered 3D endless runner game with real-time hand gesture controls, immersive procedural generation, and dynamic sound synthesis.**
+  # 🏃 Temple Run: Cursed Forest 🌲
+
+  **A real-time hand-gesture controlled 3D endless runner game built with MediaPipe, Three.js WebGL, and Vibe Coding.**
+
+  [![MediaPipe Hands](https://img.shields.io/badge/MediaPipe-Hands-007acc?style=for-the-badge&logo=google&logoColor=white)](https://google.github.io/mediapipe/solutions/hands.html)
+  [![Three.js WebGL](https://img.shields.io/badge/Three.js-WebGL-000000?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+  [![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas)
+  [![Vanilla JavaScript](https://img.shields.io/badge/Vanilla-JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+  [![Built With Vibe Coding](https://img.shields.io/badge/Built%20With-Vibe%20Coding-8A2BE2?style=for-the-badge&logo=visual-studio-code&logoColor=white)](#-boldly-built-with-vibe-coding)
+
+</div>
 
 ---
 
