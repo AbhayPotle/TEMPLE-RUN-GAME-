@@ -587,7 +587,11 @@ function tick(){
             triggerScreenShake();
         }
     }
-    playerGroup.scale.set(1,1,1);
+    if(isSlide){
+        playerGroup.scale.set(1,0.35,1);
+    }else{
+        playerGroup.scale.set(1,1,1);
+    }
 
     if(G.speed>0.2){G.score+=G.speed*0.15;G.dist+=G.speed*0.5;G.base+=0.0003;}
     scoreEl.textContent=Math.floor(G.score);
