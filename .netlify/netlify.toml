@@ -8,7 +8,7 @@ redirects = []
 
 [build]
 publish = "C:\\Users\\abhay\\Documents\\temple run"
-publishOrigin = "default"
+publishOrigin = "config"
 
 [build.environment]
 
